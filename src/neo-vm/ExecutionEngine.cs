@@ -11,6 +11,8 @@ namespace Neo.VM
         private readonly IScriptTable table;
         private readonly InteropService service;
 
+         public static Exception lastException = null;
+
         public IScriptContainer ScriptContainer { get; }
         public ICrypto Crypto { get; }
         public RandomAccessStack<ExecutionContext> InvocationStack { get; } = new RandomAccessStack<ExecutionContext>();
@@ -775,6 +777,7 @@ namespace Neo.VM
 
                     default:
                         State |= VMState.FAULT;
+                        lastException = new Exception("Not a valid OpCode");
                         return;
                 }
             if (!State.HasFlag(VMState.FAULT) && InvocationStack.Count > 0)
@@ -804,9 +807,10 @@ namespace Neo.VM
             {
                 ExecuteOp(opcode, CurrentContext);
             }
-            catch
+            catch (Exception ex)
             {
                 State |= VMState.FAULT;
+                lastException = ex;
             }
         }
 
@@ -820,7 +824,8 @@ namespace Neo.VM
 
         public void StepOver()
         {
-            if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT)) return;
+            if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT)) 
+               return;
             State &= ~VMState.BREAK;
             int c = InvocationStack.Count;
             do
