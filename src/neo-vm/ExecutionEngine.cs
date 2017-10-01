@@ -11,7 +11,8 @@ namespace Neo.VM
         private readonly IScriptTable table;
         private readonly InteropService service;
 
-         public static Exception lastException = null;
+        public static Exception LastException { get; private set; } = null;
+        public static OpCode LastOpCode { get; private set; } = OpCode.NOP;
 
         public IScriptContainer ScriptContainer { get; }
         public ICrypto Crypto { get; }
@@ -51,6 +52,7 @@ namespace Neo.VM
 
         private void ExecuteOp(OpCode opcode, ExecutionContext context)
         {
+            LastOpCode = opcode;
             if (opcode > OpCode.PUSH16 && opcode != OpCode.RET && context.PushOnly)
             {
                 State |= VMState.FAULT;
@@ -777,7 +779,7 @@ namespace Neo.VM
 
                     default:
                         State |= VMState.FAULT;
-                        lastException = new Exception("Not a valid OpCode");
+                        LastException = new Exception("Not a valid OpCode");
                         return;
                 }
             if (!State.HasFlag(VMState.FAULT) && InvocationStack.Count > 0)
@@ -810,7 +812,7 @@ namespace Neo.VM
             catch (Exception ex)
             {
                 State |= VMState.FAULT;
-                lastException = ex;
+                LastException = ex;
             }
         }
 
